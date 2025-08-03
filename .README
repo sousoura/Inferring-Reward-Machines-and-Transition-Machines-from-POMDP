@@ -1,0 +1,154 @@
+# Inferring Transition and Reward Machines for Policy Learning in POMDPs
+
+This repository contains the official implementation for the paper: "Inferring Transition and Reward Machines for Policy Learning in Partially Observable Markov Decision Processes".
+
+This project introduces a novel framework for policy learning in Det-POMDPs by decoupling non-Markovian dependencies into **Transition Machines (TMs)** and **Reward Machines (RMs)**. We propose the **Dual Behavior Mealy Machine (DBMM)** as a unified representation and an efficient inference algorithm, **DB-RPNI**, to learn these automata directly from traces.
+
+## Project Architecture
+
+The project is organized into several key modules, each corresponding to a specific stage of the experimental pipeline described in the paper. All generated data and final models are saved to the project's root directory for easy access and interoperability between modules.
+
+---
+
+### 1. `experiment1_env/`
+* **Purpose**: Generates trajectory data from the simple, predefined grid-world environments (3x3, 4x4, 5x5) used for the baseline comparisons in **Section 6.1** of the paper.
+* **Key Script**: `main.py`
+* **Inputs**: None. The environments are hard-coded.
+* **Outputs**:
+    * `trajectories.json` (in the root directory): A file containing the generated agent-environment interaction traces.
+
+---
+
+### 2. `experiment2_env/`
+* **Purpose**: Handles the more complex, large-scale 25x25 environment used for the ablation and scalability studies in **Section 6.2**. This module is responsible for both generating the random environment itself and then generating trajectories from it.
+* **Key Scripts**:
+    * `env_para_generation.py`: Generates the random environment configuration.
+    * `main.py`: Generates trajectories based on an environment configuration file.
+    * `env.py`: Defines the `BigEnv` class that simulates the environment based on the parameters.
+* **Inputs**:
+    * `env_para.json` (from the root directory, if it exists) is read by `main.py`.
+* **Outputs**:
+    * `env_para.json` (to the root directory): The configuration file describing the randomly generated environment's dynamics, labels, and automata rules.
+    * `trajectories.json` (to the root directory): The interaction traces from this complex environment.
+
+---
+
+### 3. `Algorithms/`
+* **Purpose**: This is the core of our contribution, implementing the inference pipeline described in **Section 5** of the paper. It takes trajectory data and infers the underlying TM and RM.
+* **Key Script**: `script.py`
+* **Core Logic**:
+    * `DB-RPNI/`: Contains the implementation of our **DB-RPNI** algorithm.
+    * `preprocessing_and_observation_supplement/`: Contains the code for our optimization techniques, including **Redundant α-Input Removal**, **Trivial β-Input Removal**, and **Observation Supplement**.
+* **Inputs**:
+    * `trajectories.json` (from the root directory).
+* **Outputs** (all to the root directory):
+    * `mealy_tm.json`: The inferred Transition Machine in DBMM format.
+    * `mealy_rm.json`: The inferred Reward Machine in DBMM format.
+    * `tm_recording.txt` / `rm_recording.txt`: Log files recording the preprocessing steps (e.g., which inputs were removed).
+
+---
+
+### 4. `RL/`
+* **Purpose**: Implements the final downstream validation task (**Section 6.3**). It uses the inferred TM and RM to augment an agent's state space and runs a standard Q-learning algorithm to solve the control task.
+* **Key Script**: `main_cross.py`
+* **Inputs** (all from the root directory):
+    * `env_para.json`: To create the "real" environment for the agent to act in.
+    * `mealy_tm.json` / `mealy_rm.json`: To create the "machine" environment that provides state augmentation.
+    * `trajectories.json`, `tm_recording.txt`, `rm_recording.txt`: To extract terminal states and other necessary mappings.
+* **Outputs** (all to the root directory):
+    * `grid_rewards.txt`: A log of the cumulative reward per episode.
+    * `grid_learning_curve.png`: A plot visualizing the agent's learning progress.
+
+---
+### Key File Formats
+
+* **`trajectories.json`**: This is a JSON Lines file (`.jsonl`), where each line is a complete trajectory.
+    * A trajectory is a JSON array of steps: `[step_1, step_2, ...]`
+    * Each step is an array: `[[label, observation_id], action_id, reward]`
+        * `label`: The symbolic label observed at the state (e.g., "key", "toilet").
+        * `observation_id`: The observation of agent. In our experiment, it is an integer encoding of the agent's (x, y) coordinates.
+        * `action_id`: An integer for the action taken.
+        * `reward`: A float for the reward received.
+
+* **`env_para.json`**: A JSON object describing the environment for Experiment 2.
+    * `environment`: Basic parameters like grid size.
+    * `labels`: Number of labels and their mapping to grid positions.
+    * `transition_automaton`: Defines the ground-truth TM, including states, transitions, and impassable locations tied to TM states.
+    * `reward_automaton`: Defines the ground-truth RM, including states, transitions, and reward values.
+
+* **`mealy_tm.json` / `mealy_rm.json`**: A JSON object representing the inferred DBMM.
+    * `states`: A list of all state names in the automaton.
+    * `initial_state`: The name of the starting state.
+    * `transitions`: An object mapping `state -> beta_input -> next_state`.
+    * `outputs`: An object mapping `state -> alpha_input -> output_value`.
+
+## How to Use
+
+All experiments are controlled via the master script `script.py` located in the project's root directory. It provides subcommands to run each experiment or clean the workspace.
+
+### Experiment 1: Efficiency on Simple Environments
+This command runs the workflow for Experiment 1: generates trajectories from a simple environment and then infers the TM and RM, reporting the runtime.
+
+**Basic Usage:**
+```bash
+python script.py exp1
+```
+
+**Customized Usage:**
+This example runs the experiment on a 4x4 grid, generates 500 trajectories, and disables the state supplementation optimization during inference.
+```bash
+python script.py exp1 --env-size 4 --num-trajectories 500 --no-supplementation
+```
+
+**Arguments for `exp1`:**
+* `--env-size`: `[3, 4, 5]` Size of the simple environment. Default: `3`.
+* `--num-trajectories`: Number of trajectories to generate. Default: `250`.
+* `--seed`: Random seed for trajectory generation. Default: `42`.
+* `--no-supplementation`: Disables the State Supplement technique.
+* `--no-alpha-preprocess`: Disables Redundant α-Input Removal.
+* `--no-beta-preprocess`: Disables Trivial β-Input Removal.
+
+---
+### Experiment 2: Scalability and Downstream RL Task
+This command runs the full end-to-end pipeline for Experiment 2: generates a complex random environment, generates trajectories, infers automata, and finally runs the RL agent with the inferred machines.
+
+**Basic Usage:**
+```bash
+python script.py exp2
+```
+
+**Customized Usage:**
+This example generates a smaller environment, uses fewer trajectories for a quick run, and sets a custom learning rate for the RL agent.
+```bash
+python script.py exp2 --env-size 15 --num-trajectories 5000 --lr 0.05
+```
+
+**Arguments for `exp2`:**
+This command combines arguments from all modules. Use `python script.py exp2 --help` to see all options. Key parameters include:
+* **Environment Generation**: `--env-size`, `--labels-count`, `--transition-states-count`, `--reward-states-count`.
+* **Trajectory Generation**: `--num-trajectories`.
+* **Algorithm Inference**: `--no-supplementation`, `--no-alpha-preprocess`, `--no-beta-preprocess`.
+* **Reinforcement Learning**: `--lr`, `--gamma`, `--epsilon`, `--episodes`.
+* **Global**: `--seed` (controls randomness in all stages).
+
+---
+### Cleaning the Workspace
+This command removes all generated files from the root directory, allowing for a fresh run.
+
+**Usage:**
+```bash
+python script.py clean
+```
+
+## Reproducing Paper Results
+
+The directory `traces_used_in_paper/` contains the exact datasets used to generate the results and figures in the paper.
+
+* `experiment1/`: Contains the `trajectories.json` files for the 3x3, 4x4, and 5x5 environments.
+* `experiment2/`: Contains `env_para.json` and `trajectories.json` for both the "Low Data" and "High Data" settings of the ablation study.
+
+**To reproduce a specific result:**
+1.  Copy the desired `trajectories.json` (and `env_para.json` for experiment 2) from the `traces_used_in_paper/` subdirectories into the project's root directory, overwriting any existing files.
+2.  Run the appropriate command (`python script.py exp1` or `python script.py exp2`) with the parameters specified in the paper's appendix.
+
+Alternatively, you can regenerate the exact same data by running the scripts with their default parameters, as they use the same random seeds reported in the paper.

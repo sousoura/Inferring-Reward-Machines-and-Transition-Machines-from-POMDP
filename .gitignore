@@ -1,0 +1,16 @@
+# 忽略所有 .txt 文件
+*.txt
+!traces_used_in_paper/*.txt
+
+# 忽略所有 .json 文件
+*.json
+
+*.png
+
+# 忽略 .idea 文件夹
+.idea/
+
+# 忽略 Python 相关文件
+__pycache__/
+*.py[cod]
+*$py.class 
