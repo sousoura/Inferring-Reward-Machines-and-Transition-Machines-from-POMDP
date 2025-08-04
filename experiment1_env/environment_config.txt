@@ -1,0 +1,97 @@
+{
+  "maps": {
+    "3": {
+      "labels": {
+        "(0, 1)": "Sofa",
+        "(1, 2)": "Stair",
+        "(2, 0)": "Coffee",
+        "(2, 1)": "TV",
+        "(2, 2)": "Grid"
+      }
+    },
+
+    "4": {
+      "labels": {
+        "(0, 1)": "Sofa",
+        "(1, 3)": "Stair",
+        "(3, 0)": "Coffee",
+        "(3, 1)": "TV",
+        "(3, 3)": "Grid"
+      }
+    },
+
+    "5": {
+      "labels": {
+        "(0, 2)": "Sofa",
+        "(1, 4)": "Sofa",
+        "(2, 4)": "Stair",
+        "(4, 0)": "Coffee",
+        "(4, 2)": "TV",
+        "(3, 3)": "Grid",
+        "(3, 4)": "Grid",
+        "(4, 3)": "Grid",
+        "(4, 4)": "Grid"
+      }
+    }
+  },
+
+  "flows": {
+    "3": {
+      "3": {
+        "states": ["q0", "q1", "q2"],
+        "start_state": "q0",
+        "terminal_state": "q2",
+        "transitions": {
+          "q0,Coffee": "q1",
+          "q1,Stair": "q2"
+        },
+        "blocked_actions": {
+          "q0": [],
+          "q1": [],
+          "q2": []
+        }
+      }
+    },
+
+    "4": {
+      "4": {
+        "states": ["q0", "q1", "q2", "q3"],
+        "start_state": "q0",
+        "terminal_state": "q3",
+        "transitions": {
+          "q0,Coffee": "q1",
+          "q1,Sofa": "q2",
+          "q2,Stair": "q3"
+        },
+        "blocked_actions": {
+          "q0": [],
+          "q1": [],
+          "q2": [],
+          "q3": []
+        }
+      }
+    },
+
+    "5": {
+      "5": {
+        "states": ["q0", "q1", "q2", "q3", "q4"],
+        "start_state": "q0",
+        "terminal_state": "q4",
+        "transitions": {
+          "q0,Coffee": "q1",
+          "q1,Sofa": "q2",
+          "q2,TV": "q3",
+          "q3,Stair": "q4"
+        },
+        "blocked_actions": {
+          "q0": [],
+          "q1": [],
+          "q2": [],
+          "q3": [],
+          "q4": []
+        }
+      }
+    }
+
+  }
+}

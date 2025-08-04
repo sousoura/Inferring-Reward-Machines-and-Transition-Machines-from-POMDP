@@ -111,6 +111,33 @@ def handle_exp2(args):
     print("\n" + "=" * 15, "Experiment 2 Finished", "=" * 15)
 
 
+def handle_baseline_ilp(args):
+    """运行ILP基线实验"""
+    print("=" * 15, "Running ILP Baseline", "=" * 15)
+
+    print(f"--- Generating trajectories for {args.env_size}x{args.env_size} environment ---")
+    cmd_traj_gen = [
+        'python',
+        os.path.join('experiment1_env', 'main.py'),
+        '--env-size', args.env_size,
+        '--num-trajectories', args.num_trajectories,
+        '--seed', args.seed
+    ]
+    run_command(cmd_traj_gen)
+
+    print(f"--- Running ILP solver with K={args.k} ---")
+    cmd_ilp = [
+        'python',
+        os.path.join('ILP_baseline', 'main.py'),
+        '--k', args.k,
+        '--input', 'trajectories.json',
+        '--output', 'ilp_mealy_rm.json'
+    ]
+    run_command(cmd_ilp)
+
+    print("\n" + "=" * 15, "ILP Baseline Finished", "=" * 15)
+
+
 def handle_clean(args):
     """清理所有生成的实验文件"""
     print("=" * 15, "Cleaning generated files", "=" * 15)
@@ -182,6 +209,17 @@ def main():
     exp2_rl.add_argument('--epsilon', type=float, default=0.3, help='Epsilon for exploration in RL.')
     exp2_rl.add_argument('--episodes', type=int, default=1500, help='Number of training episodes for RL.')
     parser_exp2.set_defaults(func=handle_exp2)
+
+    # "ILP 基线"子命令
+    parser_ilp = subparsers.add_parser('baseline-ilp', help='Run the ILP baseline method on a simple environment.')
+    parser_ilp.add_argument('--env-size', type=int, default=3, choices=[3, 4, 5],
+                            help='Size of the simple environment to generate data from. Default: 3')
+    parser_ilp.add_argument('--k', type=int, default=3,
+                            help='The number of states (K) for the target Reward Machine. Default: 3')
+    parser_ilp.add_argument('--num-trajectories', type=int, default=275,
+                            help='Number of trajectories to generate for the ILP solver. Default: 275')
+    parser_ilp.add_argument('--seed', type=int, default=42, help='Random seed for trajectory generation. Default: 42')
+    parser_ilp.set_defaults(func=handle_baseline_ilp)
 
     # --- “清理”子命令解析器 ---
     parser_clean = subparsers.add_parser('clean', help='Clean up all generated files from experiments.')

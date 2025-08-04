@@ -1,6 +1,7 @@
 # 忽略所有 .txt 文件
 *.txt
 !traces_used_in_paper/*.txt
+!experiment1_env/environment_config.txt
 
 # 忽略所有 .json 文件
 *.json

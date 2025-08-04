@@ -60,6 +60,16 @@ The project is organized into several key modules, each corresponding to a speci
     * `grid_learning_curve.png`: A plot visualizing the agent's learning progress.
 
 ---
+
+### 5. `ILP_baseline/`
+* **Purpose**: Implements the ILP baseline algorithm (**Section 6.1**).
+* **Key Script**: `main.py`
+* **Inputs**:
+    * `trajectories.json` (from the root directory).
+**Outputs**:
+    * `ilp_mealy_rm.json` (to the root directory): The inferred Reward Machine.
+
+---
 ### Key File Formats
 
 * **`trajectories.json`**: This is a JSON Lines file (`.jsonl`), where each line is a complete trajectory.
@@ -130,6 +140,28 @@ This command combines arguments from all modules. Use `python script.py exp2 --h
 * **Algorithm Inference**: `--no-supplementation`, `--no-alpha-preprocess`, `--no-beta-preprocess`.
 * **Reinforcement Learning**: `--lr`, `--gamma`, `--epsilon`, `--episodes`.
 * **Global**: `--seed` (controls randomness in all stages).
+
+---
+### Running Baseline Comparisons
+The master script also allows you to run the baseline methods mentioned in the paper for comparison.
+
+#### ILP Baseline
+This command first generates data from one of the simple environments (3x3, 4x4, or 5x5) and then runs the ILP-based reward machine inference algorithm. The output is saved to `ilp_mealy_rm.json`.
+
+**Usage:**
+```bash
+# Run ILP baseline on the 3x3 environment with K=3 states
+python script.py baseline-ilp --env-size 3 --k 3
+
+# Run on the 4x4 environment with K=4 states
+python script.py baseline-ilp --env-size 4 --k 4
+```
+
+**Arguments for `baseline-ilp`:**
+* `--env-size`: `[3, 4, 5]` The simple environment to use for data generation. Default: `3`.
+* `--k`: The number of states for the ILP solver to assume for the RM. Default: `3`.
+* `--num-trajectories`: Number of trajectories to generate. Default: `275`.
+* `--seed`: Random seed for trajectory generation. Default: `42`.
 
 ---
 ### Cleaning the Workspace
